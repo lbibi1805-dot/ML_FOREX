@@ -1,0 +1,1 @@
+**Reference: https://www.kaggle.com/code/imtkaggleteam/forex-api-with-python/notebook**
