@@ -7,7 +7,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 from datetime import datetime, timedelta
 
 # Bước 1: Crawl dữ liệu từ yfinance
-symbol = 'USDCAD=X'  # Cặp tiền tệ USD/CAD trên Yahoo Finance
+symbol = 'EURCAD=X'  # Cặp tiền tệ EUR/CAD trên Yahoo Finance
 end_date = datetime.today()
 start_date = end_date - timedelta(days=365)  # Lấy dữ liệu 1 năm trở lại
 
@@ -49,7 +49,7 @@ print(f"R2 Score: {r2}")
 # In ra kết quả dự đoán từ ngày 7/10 đến 11/10
 dates = pd.date_range(start='2024-10-07', periods=5, freq='D')
 for date, pred in zip(dates, y_pred):
-    print(f"Ngày {date.date()} - Dự đoán giá USD/CAD: {pred}")
+    print(f"Ngày {date.date()} - Dự đoán giá EUR/CAD: {pred}")
 
 # --- PHẦN PLOTTING ---
 
@@ -58,7 +58,7 @@ plt.figure(figsize=(10, 5))
 plt.plot(df.index, df['Close'], label='Giá thực tế (Historical)', color='blue')  # Giá thực tế
 plt.plot(dates, y_pred, label='Giá dự đoán (Predicted)', color='orange', linestyle='--', marker='o')  # Giá dự đoán
 plt.xlabel('Ngày')
-plt.ylabel('Giá USD/CAD')
+plt.ylabel('Giá EUR/CAD')
 plt.title('So sánh giá thực tế và giá dự đoán từ 7/10 đến 11/10')
 plt.legend()
 plt.grid()
@@ -72,7 +72,7 @@ plt.plot(df.index, df['MA_10'], label='MA_10', color='red', linestyle='--')
 plt.plot(df.index, df['MA_50'], label='MA_50', color='green', linestyle='--')
 plt.plot(df.index, df['MA_200'], label='MA_200', color='purple', linestyle='--')
 plt.xlabel('Ngày')
-plt.ylabel('Giá USD/CAD')
+plt.ylabel('Giá EUR/CAD')
 plt.title('Giá đóng cửa và các chỉ báo MA (10, 50, 200)')
 plt.legend()
 plt.grid()
@@ -83,8 +83,8 @@ plt.show()
 plt.figure(figsize=(10, 5))
 plt.plot(dates, y_pred, marker='o', color='orange', label='Giá dự đoán (Predicted)')
 plt.xlabel('Ngày')
-plt.ylabel('Giá USD/CAD')
-plt.title('Dự đoán giá USD/CAD từ 7/10 đến 11/10')
+plt.ylabel('Giá EUR/CAD')
+plt.title('Dự đoán giá EUR/CAD từ 7/10 đến 11/10')
 plt.legend()
 plt.grid()
 plt.xticks(rotation=45)
