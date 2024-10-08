@@ -2,18 +2,19 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestRegressor
+from lightgbm import LGBMRegressor
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import mean_squared_error, r2_score
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Bước 1: Crawl dữ liệu từ yfinance
-symbol = 'GBPJPY=X'  # Cặp tiền tệ GBP/JPY trên Yahoo Finance
+symbol = 'EURCAD=X'  # Cặp tiền tệ EUR/CAD trên Yahoo Finance
 end_date = datetime.today()
-start_date = end_date - timedelta(days=365)  # Lấy dữ liệu 1 năm trở lại
+start_date = "2000-01-01"  # Lấy dữ liệu từ khi mã xuất hiện (có thể thay đổi theo nhu cầu)
 
 df = yf.download(symbol, start=start_date, end=end_date)
 
-# Bước 2: Tạo các chỉ báo kỹ thuật (ví dụ: MA_10, MA_50, MA_200)
+# Bước 2: Tạo các chỉ báo kỹ thuật (MA_10, MA_50, MA_200)
 df['MA_10'] = df['Close'].rolling(window=10).mean()
 df['MA_50'] = df['Close'].rolling(window=50).mean()
 df['MA_200'] = df['Close'].rolling(window=200).mean()
@@ -32,24 +33,38 @@ X_test = X.iloc[-5:]   # Dữ liệu từ 7/10 đến 11/10 để dự đoán
 y_train = y.iloc[:-5]
 y_test = y.iloc[-5:]  # Giá thực tế từ 7/10 đến 11/10 để so sánh
 
-# Bước 6: Xây dựng mô hình RandomForestRegressor
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
+# Bước 6: Xây dựng mô hình LightGBM
+lgbm = LGBMRegressor(random_state=42)
+
+# Fine-tune model với GridSearchCV
+param_grid = {
+    'n_estimators': [100, 200, 500],
+    'learning_rate': [0.01, 0.05, 0.1],
+    'num_leaves': [31, 50, 100],
+    'max_depth': [-1, 10, 20]
+}
+
+grid_search = GridSearchCV(estimator=lgbm, param_grid=param_grid, cv=5, scoring='neg_mean_squared_error', verbose=1, n_jobs=-1)
+grid_search.fit(X_train, y_train)
+
+# Lấy mô hình tốt nhất sau fine-tuning
+best_model = grid_search.best_estimator_
 
 # Bước 7: Dự đoán
-y_pred = model.predict(X_test)
+y_pred = best_model.predict(X_test)
 
 # Bước 8: Đánh giá mô hình
 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 r2 = r2_score(y_test, y_pred)
 
+print(f"Best Params: {grid_search.best_params_}")
 print(f"RMSE: {rmse}")
 print(f"R2 Score: {r2}")
 
 # In ra kết quả dự đoán từ ngày 7/10 đến 11/10
 dates = pd.date_range(start='2024-10-07', periods=5, freq='D')
 for date, pred in zip(dates, y_pred):
-    print(f"Ngày {date.date()} - Dự đoán giá GBP/JPY: {pred}")
+    print(f"Ngày {date.date()} - Dự đoán giá EUR/CAD: {pred}")
 
 # --- PHẦN PLOTTING ---
 
@@ -58,22 +73,19 @@ plt.figure(figsize=(10, 5))
 plt.plot(df.index, df['Close'], label='Giá thực tế (Historical)', color='blue')  # Giá thực tế
 plt.plot(dates, y_pred, label='Giá dự đoán (Predicted)', color='orange', linestyle='--', marker='o')  # Giá dự đoán
 plt.xlabel('Ngày')
-plt.ylabel('Giá GBP/JPY')
+plt.ylabel('Giá EUR/CAD')
 plt.title('So sánh giá thực tế và giá dự đoán từ 7/10 đến 11/10')
 plt.legend()
 plt.grid()
 plt.xticks(rotation=45)
 plt.show()
 
-# Biểu đồ 2: Hiển thị chỉ báo kỹ thuật và giá đóng cửa
+# Biểu đồ 3: Chỉ hiển thị dữ liệu dự đoán từ ngày 7/10 đến 11/10
 plt.figure(figsize=(10, 5))
-plt.plot(df.index, df['Close'], label='Giá đóng cửa (Close)', color='blue')
-plt.plot(df.index, df['MA_10'], label='MA_10', color='red', linestyle='--')
-plt.plot(df.index, df['MA_50'], label='MA_50', color='green', linestyle='--')
-plt.plot(df.index, df['MA_200'], label='MA_200', color='purple', linestyle='--')
+plt.plot(dates, y_pred, marker='o', color='orange', label='Giá dự đoán (Predicted)')
 plt.xlabel('Ngày')
-plt.ylabel('Giá GBP/JPY')
-plt.title('Giá đóng cửa và các chỉ báo MA (10, 50, 200)')
+plt.ylabel('Giá EUR/CAD')
+plt.title('Dự đoán giá EUR/CAD từ 7/10 đến 11/10')
 plt.legend()
 plt.grid()
 plt.xticks(rotation=45)
