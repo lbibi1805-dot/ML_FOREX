@@ -16,9 +16,6 @@ from sklearn.ensemble import RandomForestRegressor
 import joblib
 import lightgbm as lgb
 
-# **SYSTEM CONFIGURATIONS **
-
-
 # **CLASS DEFINITIONS**
 
 class Visualization:
@@ -62,16 +59,6 @@ class Visualization:
 class FineTuning:
     @staticmethod
     def light_gbm_fine_tuning(X_train, y_train):
-        # param_grid = {
-        #     'n_estimators': [100, 200, 500],
-        #     'max_depth': [3, 5, 7, 10],
-        #     'learning_rate': [0.01, 0.05, 0.1],
-        #     'subsample': [0.8, 0.9, 1.0],
-        #     'colsample_bytree': [0.8, 0.9, 1.0],
-        #     'reg_alpha': [0, 0.1, 0.5],
-        #     'reg_lambda': [0, 0.1, 0.5]
-        # }
-        
         param_grid = {
             'n_estimators': [100],      # Chỉ thử với một giá trị
             'max_depth': [3],           # Chỉ thử với một giá trị
@@ -82,7 +69,6 @@ class FineTuning:
             'reg_lambda': [0]           # Chỉ thử với một giá trị
         }
 
-               
         lgb_model = lgb.LGBMRegressor(random_state=42)
         grid_search = GridSearchCV(estimator=lgb_model, param_grid=param_grid, scoring='neg_mean_squared_error', cv=5, n_jobs=-1, verbose=1)
         grid_search.fit(X_train, y_train)
@@ -122,26 +108,6 @@ class FineTuning:
 
     @staticmethod
     def decision_tree_fine_tuning(X_train, y_train):
-        # param_grid = {
-        #     'max_depth': [3, 5, 7, 10, None],
-        #     'min_samples_split': [2, 5, 10],
-        #     'min_samples_leaf': [1, 2, 4],
-        #     'max_features': ['auto', 'sqrt', 'log2', None]
-        # }
-        
-        # param_grid = {
-        #     'max_depth': [3, 5, None],       # Giảm số lượng giá trị
-        #     'min_samples_split': [2, 5],     # Giảm số lượng giá trị
-        #     'min_samples_leaf': [1, 2],      # Giảm số lượng giá trị
-        #     'max_features': ['auto', 'sqrt'] # Giảm số lượng giá trị
-        # }
-           
-        # param_grid = {
-        #     'max_depth': [None, 3, 5, 10],
-        #     'max_features': ['sqrt', 'log2'],  # Đảm bảo chỉ sử dụng các giá trị hợp lệ
-        #     'min_samples_leaf': [1, 2, 4],
-        #     'min_samples_split': [2, 5, 10]
-        # }
         param_grid = {
             'max_depth': [None, 3, 5],  # Giữ lại None, 3 và 5
             'max_features': ['sqrt'],    # Chỉ giữ lại 'sqrt'
@@ -163,29 +129,6 @@ class FineTuning:
 
     @staticmethod
     def random_forest_fine_tuning(X_train, y_train):
-        # param_grid = {
-        #     'n_estimators': [100, 200, 500],
-        #     'max_depth': [3, 5, 7, 10, None],
-        #     'min_samples_split': [2, 5, 10],
-        #     'min_samples_leaf': [1, 2, 4],
-        #     'max_features': ['auto', 'sqrt', 'log2']
-        # }
-        # param_grid = {
-        #     'n_estimators': [100, 200],     # Giảm số lượng giá trị
-        #     'max_depth': [3, 5, None],      # Giảm số lượng giá trị
-        #     'min_samples_split': [2, 5],    # Giảm số lượng giá trị
-        #     'min_samples_leaf': [1, 2],     # Giảm số lượng giá trị
-        #     'max_features': ['auto', 'sqrt']# Giảm số lượng giá trị
-        # }
-
-        param_grid = {
-            'n_estimators': [100, 200],
-            'max_depth': [None, 10, 20],
-            'max_features': ['sqrt', 'log2'],  # Chỉ sử dụng các giá trị hợp lệ
-            'min_samples_leaf': [1, 2],
-            'min_samples_split': [2, 5]
-        }
-        
         param_grid = {
             'n_estimators': [100],         # Chỉ giữ lại 100
             'max_depth': [None, 10],       # Giữ lại None và 10
@@ -193,7 +136,6 @@ class FineTuning:
             'min_samples_leaf': [2],        # Chỉ giữ lại 2
             'min_samples_split': [2]        # Chỉ giữ lại 2
         }
-
 
         rf_model = RandomForestRegressor(random_state=42)
         grid_search = GridSearchCV(estimator=rf_model, param_grid=param_grid, scoring='neg_mean_squared_error', cv=5, n_jobs=-1, verbose=1)
@@ -259,10 +201,8 @@ def feature_engineering(data):
 def handle_missing_values(data):
     data.interpolate(method='linear', inplace=True)
     if data.isna().sum().sum() > 0:
-        # data.fillna(method='ffill', inplace=True)
         data.ffill(inplace=True)
         if data.isna().sum().sum() > 0:
-            # data.fillna(method='bfill', inplace=True)
             data.bfill(inplace=True)
     return data.dropna(subset=['Close', 'Open'])
 
@@ -327,63 +267,14 @@ def build_numerical_pipeline(X_reduced):
 # New function for prediction
 def predict(model, X_data, num_pipeline):
     X_transformed = num_pipeline.transform(X_data)
-    # predictions = model.predict(X_transformed)
     return model.predict(X_transformed)
-
-def feature_engineering_for_future_predictions(data, past_data):
-    # Lưu trữ các cột đã có
-    existing_columns = past_data.columns.tolist()
-
-    # Tính toán các chỉ số kỹ thuật cho dữ liệu trong tương lai
-    if 'Close' in data.columns:
-        if len(data) >= 10: data['MA_10'] = data['Close'].rolling(window=10).mean()
-        if len(data) >= 50: data['MA_50'] = data['Close'].rolling(window=50).mean()
-        if len(data) >= 200: data['MA_200'] = data['Close'].rolling(window=200).mean()
-
-    if 'Volume' in data.columns: data['Volume_24h'] = data['Volume'].rolling(window=1440).sum()
-        
-    # Tính toán RSI
-    if 'Close' in data.columns: data['RSI'] = ta.momentum.RSIIndicator(data['Close'], window=14).rsi()
-    
-    # Tính toán MACD
-    if 'Close' in data.columns: data['MACD'] = ta.trend.MACD(data['Close']).macd()
-    
-    # Tính toán Bollinger Bands
-    if 'Close' in data.columns:
-        bollinger = ta.volatility.BollingerBands(data['Close'])
-        data['BB_High'] = bollinger.bollinger_hband()
-        data['BB_Low'] = bollinger.bollinger_lband()
-        data['BB_Width'] = (data['BB_High'] - data['BB_Low']) / data['Close']
-    
-    # Tính toán ADL
-    if 'High' in data.columns and 'Low' in data.columns: data['ADL'] = ta.volume.AccDistIndexIndicator(data['High'], data['Low'], data['Close'], data['Volume']).acc_dist_index()
-    
-    # Tính toán Aroon
-    if 'Close' in data.columns:
-        aroon = ta.trend.AroonIndicator(data['Close'], data['Low'], window=25)
-        data['Aroon_Up'] = aroon.aroon_up()
-        data['Aroon_Down'] = aroon.aroon_down()
-    
-    return data
-
-def handle_missing_prediction_values(data):
-    # Sử dụng phương pháp nội suy dể điền giá trị thiếu
-    data.interpolate(method='linear', inplace=True)
-    if data.isna().sum().sum() > 0:
-        # data.fillna(method='ffill', inplace=True)
-        data.ffill(inplace=True)
-        if data.isna().sum().sum() > 0:
-            # data.fillna(method='bfill', inplace=True)
-            data.bfill(inplace=True)
-    return data.dropna(subset=['Close', 'Open'])
-
 
 def feature_engineering_for_future_predictions(data, past_data):
     # Tính toán các chỉ số kỹ thuật cho dữ liệu trong tương lai
     if 'Close' in past_data.columns:
-        data['MA_10'] = past_data['Close'].rolling(window=10).mean()
-        data['MA_50'] = past_data['Close'].rolling(window=50).mean()
-        data['MA_200'] = past_data['Close'].rolling(window=200).mean()
+        if len(data) >= 10: data['MA_10'] = past_data['Close'].rolling(window=10).mean()
+        if len(data) >= 50: data['MA_50'] = past_data['Close'].rolling(window=50).mean()
+        if len(data) >= 200: data['MA_200'] = past_data['Close'].rolling(window=200).mean()
 
     if 'Volume' in past_data.columns:
         data['Volume_24h'] = past_data['Volume'].rolling(window=1440).sum()
@@ -417,6 +308,13 @@ def feature_engineering_for_future_predictions(data, past_data):
 
     return data
 
+def handle_missing_prediction_values(data):
+    data.interpolate(method='linear', inplace=True)
+    if data.isna().sum().sum() > 0:
+        data.ffill(inplace=True)
+        if data.isna().sum().sum() > 0:
+            data.bfill(inplace=True)
+    return data.dropna(subset=['Close', 'Open'])
 
 def future_predictions(model, start_date, end_date, past_data):
     future_dates = pd.date_range(start=start_date, end=end_date, freq='B')
@@ -451,19 +349,10 @@ def future_predictions(model, start_date, end_date, past_data):
 
     input_columns = model.feature_names_in_
 
-    # CHỈNH SỬA: Lọc các cột hợp lệ trong future_data
-    valid_columns = [col for col in input_columns if col in future_data.columns]  # CHỈNH SỬA
-    future_data = future_data[valid_columns]  # CHỈNH SỬA
+    # Lọc các cột hợp lệ trong future_data
+    valid_columns = [col for col in input_columns if col in future_data.columns]
+    future_data = future_data[valid_columns]
 
-    # Kiểm tra xem có đủ cột để dự đoán hay không
-    if len(future_data.columns) == 0:
-        raise ValueError("No valid features available for prediction.")
-
-    future_data['Predicted_Close'] = model.predict(future_data)
-
-    return future_data
-
-# **MAIN FUNCTION**
 def main():
     # Step 1: Define Label
     forex_label = ['GBPJPY=X']
